@@ -27,6 +27,9 @@ namespace Ling {
 			bool regHotKey(const std::wstring& keyStr, const UINT msgId);
 			void unRegHotKey(const UINT msgId);
 			void initTray(const UINT msgId,const std::wstring& tip);
+			// 换托盘图标：传 exe 里的 ICON 资源 ID。托盘还没建（initTray 未调）时不做任何事。
+			// 使用方自带多套图标资源时用它切换（ZPin 的 彩色版/简洁版 托盘图标就靠这个）
+			void setTrayIcon(const int iconResourceId);
 			void disposeTray();
 			void initArgs();
 			UINT popupMenu(HMENU menu);

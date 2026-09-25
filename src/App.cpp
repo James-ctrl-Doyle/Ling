@@ -107,6 +107,16 @@ namespace Ling {
         Shell_NotifyIcon(NIM_ADD, tray.get());
     }
 
+    void App::setTrayIcon(const int iconResourceId)
+    {
+        if (!tray) return;
+        auto hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(iconResourceId));
+        if (!hIcon) return;   // 资源不存在：保持原图标，别把托盘弄成空白
+        tray->hIcon = hIcon;
+        tray->uFlags = NIF_ICON;
+        Shell_NotifyIcon(NIM_MODIFY, tray.get());
+    }
+
     void App::disposeTray()
     {
         if (tray.get()) {
