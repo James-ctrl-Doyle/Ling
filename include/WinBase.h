@@ -22,6 +22,9 @@ namespace Ling {
 		// 窗口类注册时加载的图标资源 ID（默认 1 —— 上游的硬编码约定）。
 		// ⚠ 窗口类整个进程只注册一次，所以必须在创建**第一个窗口之前**调用。
 		static void setAppIconResourceId(int id);
+		// 窗口类名（默认 L"Ling"）。同图标：必须在建**第一个窗口之前**设置，
+		// 且进程内唯一 —— 两个同名类第二次 RegisterClassEx 会拿到第一次的配置。
+		static void setAppWindowClassName(const std::wstring& name);
 		void enableShadow();
 		void enableBorderResize();
 		void disableWinAnimation();
@@ -43,6 +46,8 @@ namespace Ling {
 		virtual void layout();
 		void setMinSize(float w, float h);
 		std::wstring openFileDialog(std::span<const COMDLG_FILTERSPEC> filter);
+		// 在 body 节点树里按 id 深度优先查找（配 Node::setId 用），找不到返回 nullptr
+		Node* findById(const std::wstring& id);
 	public:
 		int x{ 0 }, y{ 0 };
 		// ⚠ w/h 存的是**物理像素**（setSize 收逻辑值，内部乘 dpi），别当逻辑值用。
@@ -90,6 +95,7 @@ namespace Ling {
 		virtual BOOL setCursor();
 	private:
 		static int appIconResourceId;
+		static std::wstring appWindowClassName;
 		std::wstring& getWinClsName(HINSTANCE hIns);
 		static LRESULT CALLBACK winProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		void mouseMove(POINT pos);

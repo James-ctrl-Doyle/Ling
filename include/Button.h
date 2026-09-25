@@ -22,6 +22,10 @@ namespace Ling {
 		void setHoverColor(Color color);
 		void setHoverBg(Color color);
 		void setHoverBorderColor(Color color);
+		// 禁用态：忽略鼠标（hover/点击都不再响应），整体压暗到 35% 不透明度。
+		// Control 基类能力（focus/isEnabled/tooltip）的最小起步，见评估报告三-4。
+		void setEnabled(bool val);
+		bool isEnabled() const { return enabled; }
 	public:
 		winrt::event<winrt::delegate<Button*>> onClick;
 		winrt::event<winrt::delegate<Button*>> onEnter;
@@ -41,6 +45,7 @@ namespace Ling {
 		bool isHover{ false };
 		// 按压态：onDown 置位并捕获鼠标，onUp 判定是否算点击，拖出后抬起不算。
 		bool pressed{ false };
+		bool enabled{ true };
 	};
 }
 

@@ -89,6 +89,7 @@ namespace Ling {
 	}
 	void Button::onMove(POINT pos)
 	{
+		if (!enabled) return;
 		auto hoverFlag = isPosIn(pos);
 		if (isHover == hoverFlag) return;
 		isHover = hoverFlag;
@@ -110,7 +111,7 @@ namespace Ling {
 		// 按下只进入按压态并捕获鼠标，不算点击 —— 点击与否等抬起时再判。
 		// 这样"按住拖出去松手"不会误触发（Windows 标准按钮语义）；
 		// 捕获后即使指针移出窗口，WM_LBUTTONUP 也会送到本窗口，保证能收到抬起。
-		if (isRight || !isPosIn(pos)) return;
+		if (isRight || !enabled || !isPosIn(pos)) return;
 		pressed = true;
 		SetCapture(win->hwnd);
 	}
@@ -119,9 +120,28 @@ namespace Ling {
 		if (isRight || !pressed) return;
 		pressed = false;
 		if (GetCapture() == win->hwnd) ReleaseCapture();
-		// 抬起时指针还在按钮内（含移出又移回）才算点击
-		if (isPosIn(pos)) {
+		// 抬起时指针还在按钮内（含移出又移回）才算点击；禁用态不触发
+		if (enabled && isPosIn(pos)) {
 			onClick(this);
+		}
+	}
+	void Button::setEnabled(bool val)
+	{
+		if (enabled == val) return;
+		enabled = val;
+		if (!val) {
+			// 按着的时候被禁用：把捕获还回去，按压态清掉
+			pressed = false;
+			if (GetCapture() == win->hwnd) ReleaseCapture();
+			// 复位 hover 外观再整体压暗，避免停在 hover 色上
+			isHover = false;
+			visual.Brush(normalBrush);
+			text->setColor(color);
+			if (hasHoverBorderColor) Node::setBorderColor(borderColorNormal);
+			visual.Opacity(0.35f);
+		}
+		else {
+			visual.Opacity(1.f);
 		}
 	}
 }

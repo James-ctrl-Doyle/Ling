@@ -7,11 +7,22 @@
 
 namespace Ling {
 	int WinBase::appIconResourceId{ 1 };
+	std::wstring WinBase::appWindowClassName{ L"Ling" };
 
 	void WinBase::setAppIconResourceId(int id)
 	{
 		// 只影响下一次窗口类注册；类已注册过（建过窗口）再改就无效了
 		appIconResourceId = id;
+	}
+
+	void WinBase::setAppWindowClassName(const std::wstring& name)
+	{
+		appWindowClassName = name;
+	}
+
+	Node* WinBase::findById(const std::wstring& id)
+	{
+		return body ? body->findById(id) : nullptr;
 	}
 
 	WinBase::WinBase() :compositor{ Composition::Compositor() }
@@ -80,7 +91,10 @@ namespace Ling {
 	void WinBase::refresh()
 	{
 		isDirty = true;
-		InvalidateRect(hwnd, nullptr, FALSE);
+		// ⚠ hwnd 为空时 InvalidateRect(nullptr) 的语义是"重绘屏幕上所有窗口"，
+		// 不是无操作。setter 自动置脏（Node 的 yoga 系 setter）会发生在建窗口之前，
+		// 这里必须挡住。
+		if (hwnd) InvalidateRect(hwnd, nullptr, FALSE);
 	}
 
 	void WinBase::enableShadow()
@@ -237,7 +251,7 @@ namespace Ling {
 			wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 			wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 			wcex.lpszMenuName = nullptr;
-			wcex.lpszClassName = L"Ling";
+			wcex.lpszClassName = appWindowClassName.c_str();
 			wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(WinBase::appIconResourceId));
 			wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(WinBase::appIconResourceId));
 			//wcex.hIcon = LoadIcon(nullptr, IDI_APPLICATION);

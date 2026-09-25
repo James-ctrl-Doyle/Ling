@@ -152,22 +152,26 @@ namespace Ling {
 	void Node::setFlexGrow(float val)
 	{
 		YGNodeStyleSetFlexGrow(node, val);
+		win->refresh();
 	}
 
 	void Node::setFlexShrink(float val)
 	{
 		YGNodeStyleSetFlexShrink(node, val);
+		win->refresh();
 	}
 
 	void Node::setWidth(float w)
 	{
 		width = w;
 		YGNodeStyleSetWidth(node, w * win->dpi);
+		win->refresh();
 	}
 	void Node::setHeight(float h)
 	{
 		height = h;
 		YGNodeStyleSetHeight(node, h * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setSize(float w, float h)
@@ -180,17 +184,20 @@ namespace Ling {
 	{
 		// 百分比不随 dpi 变化，直接透传给 yoga
 		YGNodeStyleSetWidthPercent(node, percent);
+		win->refresh();
 	}
 
 	void Node::setHeightPercent(float percent)
 	{
 		YGNodeStyleSetHeightPercent(node, percent);
+		win->refresh();
 	}
 
 	void Node::setSizePercent(float w, float h)
 	{
 		YGNodeStyleSetWidthPercent(node, w);
 		YGNodeStyleSetHeightPercent(node, h);
+		win->refresh();
 	}
 
 	void Node::setMargin(float val)
@@ -200,6 +207,7 @@ namespace Ling {
 		margin[2] = val;
 		margin[3] = val;
 		YGNodeStyleSetMargin(node, YGEdgeAll, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setMargin(float left, float top, float right, float bottom)
@@ -219,24 +227,28 @@ namespace Ling {
 	{
 		margin[0] = val;
 		YGNodeStyleSetMargin(node, YGEdgeLeft, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setMarginTop(float val)
 	{
 		margin[1] = val;
 		YGNodeStyleSetMargin(node, YGEdgeTop, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setMarginRight(float val)
 	{
 		margin[2] = val;
 		YGNodeStyleSetMargin(node, YGEdgeRight, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setMarginBottom(float val)
 	{
 		margin[3] = val;
 		YGNodeStyleSetMargin(node, YGEdgeBottom, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setPadding(float val)
@@ -260,24 +272,28 @@ namespace Ling {
 	{
 		padding[0] = val;
 		YGNodeStyleSetPadding(node, YGEdgeLeft, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setPaddingTop(float val)
 	{
 		padding[1] = val;
 		YGNodeStyleSetPadding(node, YGEdgeTop, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setPaddingRight(float val)
 	{
 		padding[2] = val;
 		YGNodeStyleSetPadding(node, YGEdgeRight, val * win->dpi);
+		win->refresh();
 	}
 
 	void Node::setPaddingBottom(float val)
 	{
 		padding[3] = val;
 		YGNodeStyleSetPadding(node, YGEdgeBottom, val * win->dpi);
+		win->refresh();
 	}
 
 	float Node::getPaddingLeft()   { return padding[0].value_or(0.f); }
@@ -296,6 +312,7 @@ namespace Ling {
 	void Node::setPositionType(const Position val)
 	{
 		YGNodeStyleSetPositionType(node, (YGPositionType)val);
+		win->refresh();
 	}
 
 	void Node::setPosition(Edge edge, float val)
@@ -313,24 +330,29 @@ namespace Ling {
 			edges[3] = val;
 		}
 		YGNodeStyleSetPosition(node, (YGEdge)edge, val*win->dpi);
+		win->refresh();
 	}
 
 	void Node::setAlignItems(const Align val)
 	{
 		YGNodeStyleSetAlignItems(node, (YGAlign)val);
+		win->refresh();
 	}
 
 	void Node::setFlexWrap(const Wrap val)
 	{
 		YGNodeStyleSetFlexWrap(node, (YGWrap)val);
+		win->refresh();
 	}
 	void Node::setJustifyContent(const Justify val)
 	{
 		YGNodeStyleSetJustifyContent(node, (YGJustify)val);
+		win->refresh();
 	}
 	void Node::setFlexDirection(const FlexDirection flexDirection)
 	{
 		YGNodeStyleSetFlexDirection(node, (YGFlexDirection)flexDirection);
+		win->refresh();
 	}
 
 	// ---- 圆角 & 边框 ----------------------------------------------------------
