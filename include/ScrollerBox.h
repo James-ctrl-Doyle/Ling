@@ -14,8 +14,9 @@ namespace Ling {
 		void onMove(POINT pos);
 		void onDown(POINT pos, bool isRight);
 		void onUp(POINT pos, bool isRight);
-		// 当前滚动偏移（物理像素，>=0）。内容 visual 被向上平移了这么多，
-		// 所以窗口坐标 -> 内容坐标需要 +getScrollY()。
+		// 当前滚动偏移（物理像素，>=0）。内容 visual 被向上平移了这么多。
+		// 子节点的命中坐标（isPosIn 用的窗口绝对坐标）由框架自动同步这个偏移，
+		// 使用方不用再手动 +getScrollY()；只有自己做"窗口坐标 -> 内容坐标"换算时才需要它。
 		float getScrollY() const { return scrollY; }
 		// 可滚动的最大距离（物理像素）。content 不溢出时为 0。
 		float getMaxScrollY() const;

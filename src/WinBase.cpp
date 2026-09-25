@@ -6,6 +6,14 @@
 #include "../include/D2D.h"
 
 namespace Ling {
+	int WinBase::appIconResourceId{ 1 };
+
+	void WinBase::setAppIconResourceId(int id)
+	{
+		// 只影响下一次窗口类注册；类已注册过（建过窗口）再改就无效了
+		appIconResourceId = id;
+	}
+
 	WinBase::WinBase() :compositor{ Composition::Compositor() }
 	{
 		App::get()->windows.push_back(this);
@@ -149,8 +157,8 @@ namespace Ling {
 
 	void WinBase::setMinSize(float w, float h)
 	{
-		minW = w * dpi;
-		minH = h * dpi;
+		minWPx = w * dpi;
+		minHPx = h * dpi;
 	}
 
 	std::wstring WinBase::openFileDialog(std::span<const COMDLG_FILTERSPEC> filter)
@@ -214,8 +222,8 @@ namespace Ling {
 		mmi->ptMaxPosition.y = workAreaRect.top;
 		mmi->ptMaxSize.x = workAreaRect.right - workAreaRect.left;
 		mmi->ptMaxSize.y = workAreaRect.bottom - workAreaRect.top;
-		mmi->ptMinTrackSize.x = minW;
-		mmi->ptMinTrackSize.y = minH;
+		mmi->ptMinTrackSize.x = minWPx;
+		mmi->ptMinTrackSize.y = minHPx;
 	}
 
 	std::wstring& WinBase::getWinClsName(HINSTANCE hIns)
@@ -230,8 +238,8 @@ namespace Ling {
 			wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 			wcex.lpszMenuName = nullptr;
 			wcex.lpszClassName = L"Ling";
-			wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(1));
-			wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(1));
+			wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(WinBase::appIconResourceId));
+			wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(WinBase::appIconResourceId));
 			//wcex.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
 			//wcex.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
 			ATOM atom = RegisterClassEx(&wcex);

@@ -68,6 +68,15 @@ namespace Ling {
 		}
 		return false;
 	}
+	Node* Node::findById(const std::wstring& id)
+	{
+		if (id.empty()) return nullptr;
+		if (this->id == id) return this;
+		for (auto& child : children) {
+			if (auto found = child->findById(id)) return found;
+		}
+		return nullptr;
+	}
 	void Node::hide()
 	{
 		visual.IsVisible(false);
@@ -98,11 +107,22 @@ namespace Ling {
 		visual.Size({ w, h });
 		if (parent) {
 			x = parent->x + x;
-			y = parent->y + y;
+			// scrollShiftY 是滚动容器给命中坐标系加的偏移（ScrollerBox 的 content
+			// 为 -scrollY，其余节点恒 0）。命中用的绝对坐标必须跟视觉侧的
+			// content->visual.Offset 平移量一致，否则滚动后子节点按未滚动坐标命中。
+			y = parent->y + y + scrollShiftY;
 		}
 		syncChrome();
 		for (auto& child : children) {
 			child->layout();
+		}
+	}
+
+	void Node::shiftHitY(float dy)
+	{
+		y += dy;
+		for (auto& child : children) {
+			child->shiftHitY(dy);
 		}
 	}
 

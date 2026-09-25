@@ -19,12 +19,20 @@ namespace Ling {
 			if (!weakThis.lock()) return;
 			onDown(pos, isRight);
 		});
+		upTok = win->onMouseUp.add([this, weakThis](POINT pos, bool isRight) {
+			if (!weakThis.lock()) return;
+			onUp(pos, isRight);
+		});
 	}
 
 	Button::~Button()
 	{
+		// 按着的时候按钮被销毁（如下拉列表项点完即拆）：把捕获还回去，
+		// 否则窗口会一直攥着鼠标捕获，别的控件收不到 mouse move
+		if (pressed && GetCapture() == win->hwnd) ReleaseCapture();
 		win->onMouseMove.remove(moveTok);
 		win->onMouseDown.remove(downTok);
+		win->onMouseUp.remove(upTok);
 	}
 	void Button::setText(const std::wstring& s)
 	{
@@ -99,7 +107,20 @@ namespace Ling {
 	}
 	void Button::onDown(POINT pos, bool isRight)
 	{
-		if (!isRight && isPosIn(pos)) {
+		// 按下只进入按压态并捕获鼠标，不算点击 —— 点击与否等抬起时再判。
+		// 这样"按住拖出去松手"不会误触发（Windows 标准按钮语义）；
+		// 捕获后即使指针移出窗口，WM_LBUTTONUP 也会送到本窗口，保证能收到抬起。
+		if (isRight || !isPosIn(pos)) return;
+		pressed = true;
+		SetCapture(win->hwnd);
+	}
+	void Button::onUp(POINT pos, bool isRight)
+	{
+		if (isRight || !pressed) return;
+		pressed = false;
+		if (GetCapture() == win->hwnd) ReleaseCapture();
+		// 抬起时指针还在按钮内（含移出又移回）才算点击
+		if (isPosIn(pos)) {
 			onClick(this);
 		}
 	}

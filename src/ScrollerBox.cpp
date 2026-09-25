@@ -61,6 +61,8 @@ namespace Ling {
 	{
 		if (!visual.IsVisible()) return;
 		if (isRight) return;
+		// 滚动条没显示时右侧没有可拖的东西，别让"贴着右边缘按下"凭空启动拖动
+		if (!visualScroller.IsVisible()) return;
 		auto sbW{ sliderW * win->dpi };
 		// 只在点击滚动条条形区域内才启动拖动
 		if (pos.y >= y && pos.y <= y + h && pos.x >= x + w - sbW && pos.x <= x + w) {
@@ -115,10 +117,21 @@ namespace Ling {
 		y = std::clamp(y, 0.f, maxScroll);
 		// 关键：偏移 snap 到整像素。scrollY 带小数会让 content 及其所有子节点
 		// 落到分数像素位置，ClearType 文本在滚动过程中会周期性发糊。
-		// 命中测试用的仍是这个整数 scrollY —— 保持"视觉/逻辑"一致。
-		scrollY = std::round(y);
+		// 命中测试用的也是这个整数 scrollY —— 保持"视觉/逻辑"一致。
+		float snapped = std::round(y);
+		float delta = snapped - scrollY;
+		if (delta != 0.f) {
+			scrollY = snapped;
+			// 命中坐标跟着平移：content 子树的绝对 y 已含 -scrollY（scrollShiftY），
+			// 子节点的 isPosIn 因此不再需要使用方手动 +getScrollY()
+			content->shiftHitY(-delta);
+		}
+		// 不变量：scrollShiftY 恒等于 -scrollY。layout 会把它再累加进 content->y，
+		// 两边必须同步，否则一次滚轮 + 一次重排就会把偏移算重。
+		content->scrollShiftY = -scrollY;
+		// Node::layout 会把 content->visual.Offset 重置回布局位（未滚动），
+		// 所以这里无条件重放一次视觉偏移，保证任何调用路径下两边一致。
 		content->visual.Offset({ 0.f, -scrollY, 0.f });
-		// 命中测试请用 getScrollY()：窗口坐标 -> 内容坐标要 +scrollY。
 		if (content->h > h) {
 			float minH = sliderMinH * win->dpi;
 			float thumbH = std::max(minH, h * h / content->h);
@@ -183,19 +196,23 @@ namespace Ling {
 
 	void ScrollerBox::layout()
 	{
+		// 内容缩到不需要滚动了（窗口变大 / 内容变少）→ 先把滚动归零：
+		// setScroll 内部会把 content 子树的命中坐标 shift 回未滚状态，
+		// 并重置视觉偏移。否则残留旧值会让命中测试整体偏移。
+		if (content->h <= h && scrollY != 0.f) {
+			setScroll(0.f);
+		}
 		Node::layout();
 		if (content->h > h) { //有滚动条
 			auto sbW{ sliderW * win->dpi };
 			visualScroller.Offset({ w - sbW, 0.f, 0.f });
 			visualScroller.Size({ sbW, h });
 			visualScroller.IsVisible(true);
+			// delta=0 也会重放 content 的视觉偏移（Node::layout 刚把它重置回未滚动位），
+			// 并保持 scrollShiftY 与 scrollY 一致，命中坐标因此始终对得上视觉。
 			setScroll(scrollY);
 		}
 		else {
-			// 内容缩到不需要滚动了（窗口变大 / 内容变少）。Node::layout 刚把
-			// content 的 visual offset 重置成 0，这里必须把 scrollY 也跟着归零，
-			// 否则它会残留旧值，让依赖 getScrollY() 的命中测试整体偏移。
-			scrollY = 0.f;
 			visualScroller.IsVisible(false);
 		}
 	}

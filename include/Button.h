@@ -29,15 +29,18 @@ namespace Ling {
 	private:
 		void onMove(POINT pos);
 		void onDown(POINT pos, bool isRight);
+		void onUp(POINT pos, bool isRight);
 	private:
 		Text* text{ nullptr };
-		winrt::event_token moveTok{}, downTok{};
+		winrt::event_token moveTok{}, downTok{}, upTok{};
 		Color hoverColor{ 0x333333FF }, hoverBg{ 0 }, hoverBorderColor{ 0 }, color{ 0x333333FF }, borderColorNormal{ 0 };
 		// 两个背景刷缓存下来，hover 切换时只做引用替换，不再每次 new。
 		winrt::Windows::UI::Composition::CompositionColorBrush normalBrush{ nullptr };
 		winrt::Windows::UI::Composition::CompositionColorBrush hoverBrush{ nullptr };
 		bool hasHoverBorderColor{ false };
 		bool isHover{ false };
+		// 按压态：onDown 置位并捕获鼠标，onUp 判定是否算点击，拖出后抬起不算。
+		bool pressed{ false };
 	};
 }
 

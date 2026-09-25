@@ -12,9 +12,11 @@
 #include "Color.h"
 namespace Ling {
 	class WinBase;
+	class ScrollerBox;
 	class Node: public std::enable_shared_from_this<Node>
 	{
 		friend class WinBase;
+		friend class ScrollerBox;
 		public:
 			Node(WinBase* parent);
 			virtual ~Node();
@@ -25,6 +27,8 @@ namespace Ling {
 			void removeChild(Node* child);
 			void removeAllChildren();
 			bool isPosIn(POINT pos);
+			// 深度优先按 id 查找（setId 存的标识），找不到返回 nullptr。空 id 直接返回 nullptr。
+			Node* findById(const std::wstring& id);
 			void hide();
 			void show();
 			virtual void setBg(const Color& color);
@@ -114,11 +118,14 @@ namespace Ling {
 			virtual void setChild(Node* child);
 			// 根据当前 w/h/dpi 同步圆角 clip 与边框几何；layout() 末尾调用。
 			void syncChrome();
-			/// <summary>
-			/// 事件回调 lock() 非空即代表 this 还活。
-			/// </summary>
-			/// <returns></returns>
-			std::weak_ptr<bool> getWeakThis();
+		/// <summary>
+		/// 事件回调 lock() 非空即代表 this 还活。
+		/// </summary>
+		/// <returns></returns>
+		std::weak_ptr<bool> getWeakThis();
+		// 把自己与全部后代的 y（命中用绝对坐标）平移 dy。
+		// 供 ScrollerBox 在滚动时同步命中坐标系，外部不要调。
+		void shiftHitY(float dy);
 		protected:
 			Color bgColor{0};
 		private:
@@ -137,6 +144,10 @@ namespace Ling {
 			winrt::Windows::UI::Composition::ShapeVisual borderVisual{ nullptr };
 			winrt::Windows::UI::Composition::CompositionRoundedRectangleGeometry borderGeo{ nullptr };
 			winrt::Windows::UI::Composition::CompositionSpriteShape borderShape{ nullptr };
+			// 滚动偏移对命中坐标的贡献：layout 累加 parent->y 时会加上它。
+			// 只有 ScrollerBox 的 content 非 0（= -scrollY），其余节点恒为 0。
+			// 视觉侧的平移由 content->visual.Offset 负责，两边必须一致。
+			float scrollShiftY{ 0.f };
 			// 生命周期哨兵：与 this 同生死（Node 析构时 alive 自动析构，强引用归零）。
 			// getWeakThis() 借它生成 weak_ptr<bool>；事件回调 lock() 非空即代表 this 还活。
 			std::shared_ptr<bool> alive{ std::make_shared<bool>(true) };

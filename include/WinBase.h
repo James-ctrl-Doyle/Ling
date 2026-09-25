@@ -19,6 +19,9 @@ namespace Ling {
 	public:
 		WinBase();
 		~WinBase();
+		// 窗口类注册时加载的图标资源 ID（默认 1 —— 上游的硬编码约定）。
+		// ⚠ 窗口类整个进程只注册一次，所以必须在创建**第一个窗口之前**调用。
+		static void setAppIconResourceId(int id);
 		void enableShadow();
 		void enableBorderResize();
 		void disableWinAnimation();
@@ -42,7 +45,11 @@ namespace Ling {
 		std::wstring openFileDialog(std::span<const COMDLG_FILTERSPEC> filter);
 	public:
 		int x{ 0 }, y{ 0 };
-		float w{ 0 }, h{ 0 }, minW{ 800 }, minH{600};
+		// ⚠ w/h 存的是**物理像素**（setSize 收逻辑值，内部乘 dpi），别当逻辑值用。
+		// 最小尺寸的成员叫 minWPx/minHPx 而不是 minW/minH —— 故意的：
+		// 这两个名字太通用，派生类里文件级常量一叫 minW 就被基类成员静默遮蔽
+		// （ZPin 的 WinConfirm 就踩过：clamp 下界 800 压过上界 520，弹框宽度被钉死）。
+		float w{ 0 }, h{ 0 }, minWPx{ 800 }, minHPx{ 600 };
 		float dpi{ 1.0 };
 		HWND hwnd{ nullptr };
 		std::wstring title;
@@ -82,6 +89,7 @@ namespace Ling {
 		virtual void onMinMaxInfo(MINMAXINFO* mmi);
 		virtual BOOL setCursor();
 	private:
+		static int appIconResourceId;
 		std::wstring& getWinClsName(HINSTANCE hIns);
 		static LRESULT CALLBACK winProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		void mouseMove(POINT pos);
