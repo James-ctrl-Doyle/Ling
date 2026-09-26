@@ -7,9 +7,43 @@
 #include "../yoga/YGConfig.h"
 
 namespace Ling {
+
+    /// <summary>
+    /// 生成"本 exe 专属"的 appID。
+    ///
+    /// ⚠ 绝对不能用 COMPILE_TIME_RAND_STR：那个宏的种子是 __TIME__ / __COUNTER__ /
+    ///   __LINE__，全部来自**编译这个 .cpp 的时刻**。而 App() 构造函数是编进
+    ///   预编译静态库（Ling.lib）的 —— 一旦打库，取值就固化了，跟链接它的程序是谁
+    ///   **完全无关**。任何两个链接同一份 Ling.lib 的程序拿到的 appID 一模一样，
+    ///   于是共用 FindWindow(L"STATIC", appID) 那一个槽位，后启动者必被误判成
+    ///   "第二实例"直接 ExitProcess。ZPin 与 ZDock 互相冲突就是这个原因。
+    ///
+    /// 换成按 **exe 自身的完整路径**做哈希：每个程序天然不同，
+    /// 同一个程序重编、换目录也稳定。
+    /// </summary>
+    static std::wstring makeAppID()
+    {
+        wchar_t buf[MAX_PATH * 2]{};
+        GetModuleFileNameW(nullptr, buf, static_cast<DWORD>(std::size(buf)));
+        std::wstring path{ buf };
+        // 路径大小写不敏感，统一小写再哈希，避免同目录不同写法算成两个 ID
+        for (auto& c : path) c = static_cast<wchar_t>(::towlower(c));
+
+        // FNV-1a 64 位
+        uint64_t h = 1469598103934665603ULL;
+        for (wchar_t c : path) {
+            h ^= static_cast<uint64_t>(c);
+            h *= 1099511628211ULL;
+        }
+
+        // 再把"同一个 exe 的多个副本放在不同目录"也区分开 —— 上面的路径哈希已经做到了，
+        // 这里只负责格式化成一个窗口标题友好的短串
+        return std::format(L"Ling_{:012X}", h & 0xFFFFFFFFFFFFULL);
+    }
+
     static std::unique_ptr<App> app;
 
-    App::App() :dq{ winrt::Windows::System::DispatcherQueue::GetForCurrentThread() }, appID{ COMPILE_TIME_RAND_STR(6)}
+    App::App() :dq{ winrt::Windows::System::DispatcherQueue::GetForCurrentThread() }, appID{ makeAppID()}
     {
         SetCurrentProcessExplicitAppUserModelID(appID.data());
     }

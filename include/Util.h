@@ -5,6 +5,14 @@
 #include <vector>
 
 namespace Ling {
+// 编译期拼一个"伪随机"字符串。种子 = __LINE__ / __COUNTER__ / __TIME__，
+// 所以它在**同一个 TU 内每次展开都不一样**（拿来做本地临时名可以）。
+//
+// ⚠ 但绝不要拿它做**跨程序的身份标识**：这些种子全来自"编译这个文件的时刻"，
+//   一旦这段代码被编进静态库（Ling.lib），取值就永久固化了 ——
+//   任何链接同一份库的程序都会拿到同一个字符串。
+//   App::appID 早年就是这么写的，导致 ZPin 与 ZDock 单实例互相误杀；
+//   现在改为按 exe 路径哈希（见 App.cpp 的 makeAppID）。
 #define COMPILE_TIME_RAND_STR(LEN) \
     []<size_t... I>(std::index_sequence<I...>) -> std::wstring { \
         constexpr std::wstring_view chars = L"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; \
