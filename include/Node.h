@@ -158,7 +158,14 @@ namespace Ling {
 		auto node = new T(win);
 		setChild(node);
 		auto savePtr = std::unique_ptr<T>(node);
-		children.push_back(std::move(savePtr));
+		// ⚠ 所有权必须挂到**真正的父节点**名下，不能一律塞 this->children：
+		//   setChild() 允许子类把新节点挂到别的节点下 —— ScrollerBox 就是挂到它的
+		//   内部 content 上。若所有权仍记在 this 上，就会出现"parent 指 A、所有权在 B"，
+		//   而 layout() / shiftHitY() 都是沿 children 递归的 → 那些节点漏掉滚动平移，
+		//   表现为"视觉滚了、命中坐标没滚"（2026-10-08 ZDock 设置页点击错位事故的根因）。
+		//   契约：setChild() 的实现**必须**设 child->parent；下面的 ?: this 只是兜底。
+		Node* owner = node->parent ? node->parent : this;
+		owner->children.push_back(std::move(savePtr));
 		return node;
 	}
 }

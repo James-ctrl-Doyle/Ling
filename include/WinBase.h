@@ -44,6 +44,11 @@ namespace Ling {
 		void setPosition(int x, int y);
 		void setCenter();
 		virtual void layout();
+		// 用**记录下来的最后一次鼠标位置**重播一次 onMouseMove。
+		// 滚动 / 重排会把控件整体移走而鼠标没动，系统的 WM_MOUSEMOVE 不会来，
+		// hover（高亮 / 光标）就不会重算 —— 由事件入口（滚轮）与 layout() 末尾调它补上。
+		// ⚠ 有重入保护：onMouseMove 的订阅者里再触发重排也不会递归。
+		void refreshHover();
 		void setMinSize(float w, float h);
 		std::wstring openFileDialog(std::span<const COMDLG_FILTERSPEC> filter);
 		// 在 body 节点树里按 id 深度优先查找（配 Node::setId 用），找不到返回 nullptr
@@ -59,6 +64,9 @@ namespace Ling {
 		HWND hwnd{ nullptr };
 		std::wstring title;
 		bool isMouseIn{ false }, isMaximized{ false };
+		// 最后一次鼠标位置（客户区物理坐标）。mouseLeave 时置回 {INT_MAX, INT_MAX} ——
+		// refreshHover() 靠它重播，哨兵值天然表示"鼠标不在窗口里"。
+		POINT lastMousePos{ INT_MAX, INT_MAX };
 		winrt::Windows::UI::Composition::Compositor compositor{ nullptr };
 		 
 		winrt::event<winrt::delegate<POINT>> onMouseMove;
@@ -108,5 +116,6 @@ namespace Ling {
 	private:
 		winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget winTarget{ nullptr };
 		bool isDirty{ false };
+		bool refreshingHover{ false };   // refreshHover 的重入保护
 	};
 }

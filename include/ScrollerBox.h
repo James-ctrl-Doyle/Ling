@@ -17,6 +17,11 @@ namespace Ling {
 		// 当前滚动偏移（物理像素，>=0）。内容 visual 被向上平移了这么多。
 		// 子节点的命中坐标（isPosIn 用的窗口绝对坐标）由框架自动同步这个偏移，
 		// 使用方不用再手动 +getScrollY()；只有自己做"窗口坐标 -> 内容坐标"换算时才需要它。
+		//
+		// ⚠ 前提：子节点必须通过 makeChild()（或 content->makeChild()）加入 ——
+		//   ScrollerBox 会把它们挂到内部 content 层，命中坐标才会跟着 scrollY 平移。
+		//   若绕过 makeChild 直接把节点挂到别的父下，它会漏掉滚动平移：
+		//   视觉滚了、点不到（2026-10-08 的"滚动后点击错位"就是这一类）。
 		float getScrollY() const { return scrollY; }
 		// 可滚动的最大距离（物理像素）。content 不溢出时为 0。
 		float getMaxScrollY() const;
@@ -47,7 +52,7 @@ namespace Ling {
 			colorVisibleThumb{ nullptr },
 			colorHoverThumb{ nullptr },
 			colorTransparent{nullptr};
-		float scrollY, dragStartMouseY, dragStartScrollY;
-		bool scrollerDragging;
+		float scrollY{ 0.f }, dragStartMouseY{ 0.f }, dragStartScrollY{ 0.f };
+		bool scrollerDragging{ false };
 	};
 }

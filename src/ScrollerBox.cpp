@@ -1,6 +1,8 @@
 ﻿#include "pch.h"
 #include "../include/ScrollerBox.h"
 #include "../include/WinBase.h"
+#include <cassert>
+#include <cmath>
 
 namespace Ling {
 
@@ -55,6 +57,9 @@ namespace Ling {
 		if (!visualScroller.IsVisible()) return;
 		if (!isPosIn(pos)) return;
 		setScroll(scrollY - space);
+		// 滚动把控件整体移走而鼠标没动 → 让 WinBase 用记下来的光标位置重播一次 hover，
+		// 否则"滚动前被指着的那一个"会把高亮一直挂着（ZDock 0.1.13 报的就是这个）。
+		win->refreshHover();
 	}
 
 	void ScrollerBox::onDown(POINT pos, bool isRight)
@@ -113,6 +118,9 @@ namespace Ling {
 
 	void ScrollerBox::setScroll(float y)
 	{
+		// NaN 会顺着 shiftHitY / visual.Offset 污染整棵子树，而且**不会自己恢复** ——
+		// 直接拒收。（成员没初始化的年代实测撞出过 scrollY=-nan。）
+		if (!std::isfinite(y)) return;
 		float maxScroll = std::max(0.f, content->h - h);
 		y = std::clamp(y, 0.f, maxScroll);
 		// 关键：偏移 snap 到整像素。scrollY 带小数会让 content 及其所有子节点
@@ -215,6 +223,10 @@ namespace Ling {
 		else {
 			visualScroller.IsVisible(false);
 		}
+		// 自检：滚动容器只该有 content 这一个直接子节点（其余都必须挂在 content 下）。
+		// 谁绕过 makeChild 直接往 ScrollerBox 上挂，命中的平移就会漏掉那些节点 ——
+		// 这里当场断住，别等用户报"点不准"。（详见 Node::makeChild 的注释。）
+		assert(children.size() == 1 && "ScrollerBox 的直接子节点只能是 content");
 	}
 
 }

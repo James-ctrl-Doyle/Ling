@@ -167,6 +167,10 @@ namespace Ling {
 		YGNodeStyleSetHeight(body->node, h);
 		YGNodeCalculateLayout(body->node, w, h, YGDirectionLTR);
 		body->layout();
+		// 重排之后控件可能已经换位置（列表重排 / 显隐 / 改尺寸都算），
+		// 而鼠标没动、系统不会再发 WM_MOUSEMOVE → 在这里补一次 hover 重算。
+		// ⚠ 不要把它挪进 setScroll()：那会在拖滚动条时自套（onMove → setScroll → 播 hover → onMove…）。
+		refreshHover();
 	}
 
 	void WinBase::setMinSize(float w, float h)
@@ -367,6 +371,7 @@ namespace Ling {
 
 	void WinBase::mouseMove(POINT pos)
 	{
+		lastMousePos = pos;
 		if (!isMouseIn) {
 			isMouseIn = true;
 			TRACKMOUSEEVENT tme{ sizeof(TRACKMOUSEEVENT) };
@@ -380,7 +385,18 @@ namespace Ling {
 	void WinBase::mouseLeave()
 	{
 		isMouseIn = false;
+		lastMousePos = POINT{ INT_MAX, INT_MAX };
 		onMouseMove(POINT{ INT_MAX, INT_MAX });
+	}
+
+	void WinBase::refreshHover()
+	{
+		// 重入保护：onMouseMove 的订阅者（ScrollerBox 拖滚动条那条分支）可能再触发
+		// 滚动甚至重排 —— 没有它就会自己套自己。
+		if (refreshingHover) return;
+		refreshingHover = true;
+		onMouseMove(lastMousePos);
+		refreshingHover = false;
 	}
 
 	void WinBase::mouseWheel(WPARAM wParam, LPARAM lParam)
